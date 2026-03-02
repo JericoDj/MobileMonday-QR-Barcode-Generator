@@ -80,3 +80,27 @@ flutter run
 *   **Analyze code**: `flutter analyze`
 *   **Run unit tests**: `flutter test`
 *   **Clean build cache**: `flutter clean`
+
+## External Privacy Policy & Support Site
+
+The repository includes a companion web application for hosting the App's **Privacy Policy** and **Support Contact** information, located in the `website/` directory. It is built using React + Vite.
+
+### Running the Web App Locally
+
+1. Navigate to the website folder:
+   ```bash
+   cd website
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+### Deployment
+
+The web app is a static site that can be deployed to any static hosting provider like **Vercel**, **Netlify**, **Firebase Hosting**, or **GitHub Pages**. 
+Run `npm run build` in the `website/` directory to generate the production `dist` folder.

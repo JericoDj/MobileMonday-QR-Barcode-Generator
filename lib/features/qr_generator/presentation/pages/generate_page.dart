@@ -12,15 +12,13 @@ import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../app/theme/app_colors.dart';
-import '../../../../app/theme/glassmorphism.dart';
-import '../../../../core/widgets/glass_card.dart';
-import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/qr_corner_frame.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../domain/entities/generated_item_entity.dart';
 import '../bloc/qr_generator_bloc.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:barcode_widget/barcode_widget.dart' as bw;
+import '../widgets/generator_tab_bar.dart';
+import '../widgets/generator_input_section.dart';
+import '../widgets/qr_preview_card.dart';
 
 /// Generate page — QR codes & barcodes with validation and hints.
 class GeneratePage extends StatefulWidget {
@@ -420,51 +418,17 @@ class _GeneratePageState extends State<GeneratePage>
         child: Column(
           children: [
             // ─── Tab Bar (QR / Barcode) ────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: BackdropFilter(
-                  filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Container(
-                    decoration: Glassmorphism.glass(
-                      opacity: 0.12,
-                      borderRadius: 16,
-                    ),
-                    child: TabBar(
-                      controller: _tabController,
-                      indicator: BoxDecoration(
-                        color: AppColors.forest,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      labelColor: AppColors.white,
-                      unselectedLabelColor: AppColors.darkGray,
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      dividerColor: Colors.transparent,
-                      labelStyle: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                      tabs: const [
-                        Tab(text: 'QR Code'),
-                        Tab(text: 'Barcode'),
-                      ],
-                      onTap: (index) {
-                        setState(() {
-                          _selectedFormat = index == 0
-                              ? 'qrStandard'
-                              : 'code128';
-                          _generatedData = null;
-                          _validationError = null;
-                          _dataController.clear();
-                          _previewKey = GlobalKey();
-                        });
-                      },
-                    ),
-                  ),
-                ),
-              ),
+            GeneratorTabBar(
+              controller: _tabController,
+              onTap: (index) {
+                setState(() {
+                  _selectedFormat = index == 0 ? 'qrStandard' : 'code128';
+                  _generatedData = null;
+                  _validationError = null;
+                  _dataController.clear();
+                  _previewKey = GlobalKey();
+                });
+              },
             ),
 
             const SizedBox(height: 16),
@@ -641,67 +605,7 @@ class _GeneratePageState extends State<GeneratePage>
 
           const SizedBox(height: 16),
 
-          // ─── Title Field ─────────────────────────────
-          TextField(
-            controller: _titleController,
-            maxLength: 100,
-            decoration: InputDecoration(
-              labelText: 'Title (optional)',
-              hintText: 'e.g., My Website QR',
-              prefixIcon: const Icon(
-                Icons.title_rounded,
-                color: AppColors.sage,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // ─── Data Input with Validation ───────────────
-          TextField(
-            controller: _dataController,
-            maxLines: isQr ? 3 : 1,
-            keyboardType:
-                info['keyboard'] as TextInputType? ?? TextInputType.text,
-            maxLength: info['maxLength'] as int? ?? 2000,
-            inputFormatters: _getInputFormatters(),
-            decoration: InputDecoration(
-              labelText: info['label'] as String,
-              hintText: info['placeholder'] as String,
-              helperText: info['hint'] as String,
-              helperMaxLines: 2,
-              errorText: _validationError,
-              errorMaxLines: 2,
-              prefixIcon: Icon(
-                isQr ? Icons.qr_code_rounded : Icons.view_week_rounded,
-                color: AppColors.sage,
-              ),
-              suffixIcon: _dataController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(
-                        Icons.clear_rounded,
-                        color: AppColors.mediumGray,
-                      ),
-                      onPressed: () {
-                        _dataController.clear();
-                        setState(() {
-                          _generatedData = null;
-                          _validationError = null;
-                        });
-                      },
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              // The counter is automatically shown by TextField if maxLength is set
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // ─── Generate Button ─────────────────────────
+          // ─── Title/Data Input ────────────────────────
           BlocConsumer<QrGeneratorBloc, QrGeneratorState>(
             listener: (context, state) {
               if (state is QrGeneratorSuccess) {
@@ -725,15 +629,22 @@ class _GeneratePageState extends State<GeneratePage>
               }
             },
             builder: (context, state) {
-              return AppButton(
-                label: isQr ? 'Generate QR Code' : 'Generate Barcode',
-                icon: Icons.auto_awesome_rounded,
+              return GeneratorInputSection(
+                isQr: isQr,
+                info: info,
+                titleController: _titleController,
+                dataController: _dataController,
+                validationError: _validationError,
                 isLoading: state is QrGeneratorLoading,
-                isExpanded: true,
-                onPressed:
-                    _dataController.text.isEmpty || _validationError != null
-                    ? null
-                    : _generate,
+                onClear: () {
+                  _dataController.clear();
+                  setState(() {
+                    _generatedData = null;
+                    _validationError = null;
+                  });
+                },
+                onGenerate: _generate,
+                inputFormatters: _getInputFormatters(),
               );
             },
           ),
@@ -742,151 +653,15 @@ class _GeneratePageState extends State<GeneratePage>
 
           // ─── Preview ─────────────────────────────────
           if (_generatedData != null && _generatedData!.isNotEmpty)
-            GlassCard(
-              margin: EdgeInsets.zero,
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  Text(
-                    'Preview',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  RepaintBoundary(
-                    key: _previewKey,
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: isQr
-                          ? QrCornerFrame(
-                              size: 240,
-                              cornerLength: 32,
-                              strokeWidth: 5,
-                              padding: 8,
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  QrImageView(
-                                    data: _generatedData!,
-                                    version: QrVersions.auto,
-                                    size: 200,
-                                    backgroundColor: AppColors.white,
-                                    eyeStyle: const QrEyeStyle(
-                                      eyeShape: QrEyeShape.square,
-                                      color: AppColors.darkTeal,
-                                    ),
-                                    dataModuleStyle: const QrDataModuleStyle(
-                                      dataModuleShape: QrDataModuleShape.square,
-                                      color: AppColors.charcoal,
-                                    ),
-                                  ),
-                                  // Center logo overlay
-                                  Container(
-                                    width: 44,
-                                    height: 44,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.white,
-                                      borderRadius: BorderRadius.circular(8),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: AppColors.darkTeal.withValues(
-                                            alpha: 0.12,
-                                          ),
-                                          blurRadius: 6,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    padding: const EdgeInsets.all(4),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(6),
-                                      child: Image.asset(
-                                        'assets/leos-logo.png',
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : QrCornerFrame(
-                              width: 260,
-                              height: 160,
-                              cornerLength: 32,
-                              strokeWidth: 5,
-                              padding: 12,
-                              child: Center(
-                                child: SizedBox(
-                                  height: 80,
-                                  child: bw.BarcodeWidget(
-                                    data: _generatedData!,
-                                    barcode: _getBarcodeType(),
-                                    drawText: true,
-                                    color: AppColors.charcoal,
-                                    style: const TextStyle(
-                                      fontFamily: 'Inter',
-                                      fontSize: 12,
-                                      color: AppColors.darkGray,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      TextButton.icon(
-                        icon: _isSharing
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.teal,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.share_rounded,
-                                size: 18,
-                                color: AppColors.teal,
-                              ),
-                        label: Text(
-                          _isSharing ? 'Sharing...' : 'Share',
-                          style: const TextStyle(color: AppColors.teal),
-                        ),
-                        onPressed: _isSharing ? null : _shareImage,
-                      ),
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.teal,
-                          foregroundColor: AppColors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        icon: _isSaving
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.white,
-                                ),
-                              )
-                            : const Icon(Icons.download_rounded, size: 18),
-                        label: Text(_isSaving ? 'Saving...' : 'Save'),
-                        onPressed: _isSaving ? null : _saveToGallery,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            QrPreviewCard(
+              previewKey: _previewKey,
+              isQr: isQr,
+              generatedData: _generatedData!,
+              barcodeType: _getBarcodeType(),
+              isSharing: _isSharing,
+              isSaving: _isSaving,
+              onShare: _shareImage,
+              onSave: _saveToGallery,
             ),
 
           const SizedBox(height: 32),

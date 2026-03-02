@@ -9,6 +9,10 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/glassmorphism.dart';
 import '../../domain/entities/scan_entity.dart';
 import '../bloc/scanner_bloc.dart';
+import '../widgets/camera_error_view.dart';
+import '../widgets/scan_result_card.dart';
+import '../widgets/scanner_overlay.dart';
+import '../widgets/scanner_top_bar.dart';
 
 /// Scanner page — QR & Barcode scanning with camera.
 class ScannerPage extends StatefulWidget {
@@ -124,31 +128,7 @@ class _ScannerPageState extends State<ScannerPage> {
   @override
   Widget build(BuildContext context) {
     if (_cameraError || _controller == null) {
-      return Container(
-        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.no_photography_rounded,
-                size: 64,
-                color: AppColors.mediumGray.withValues(alpha: 0.5),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Camera not available',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Use a physical device to scan',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ),
-        ),
-      );
+      return const CameraErrorView(message: 'Camera not available');
     }
 
     return Container(
@@ -160,272 +140,33 @@ class _ScannerPageState extends State<ScannerPage> {
             controller: _controller!,
             onDetect: _onDetect,
             errorBuilder: (context, error) {
-              return Container(
-                decoration: const BoxDecoration(
-                  gradient: AppColors.backgroundGradient,
-                ),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.no_photography_rounded,
-                        size: 64,
-                        color: AppColors.mediumGray.withValues(alpha: 0.5),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Camera error',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        error.errorDetails?.message ??
-                            'Unable to access camera',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
+              return CameraErrorView(
+                message: 'Camera error',
+                errorDetails:
+                    error.errorDetails?.message ?? 'Unable to access camera',
               );
             },
           ),
 
           // ─── Overlay ──────────────────────────────────
-          _buildScanOverlay(),
+          ScannerOverlay(hasScanned: _hasScanned),
 
           // ─── Top Bar ──────────────────────────────────
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 12,
-                      ),
-                      decoration: Glassmorphism.glass(
-                        opacity: 0.2,
-                        borderRadius: 16,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Scanner',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.white,
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.image_rounded,
-                                  color: AppColors.white,
-                                ),
-                                onPressed: _pickImage,
-                              ),
-                              IconButton(
-                                icon: ValueListenableBuilder(
-                                  valueListenable: _controller!,
-                                  builder: (_, state, _) {
-                                    return Icon(
-                                      state.torchState == TorchState.on
-                                          ? Icons.flash_on_rounded
-                                          : Icons.flash_off_rounded,
-                                      color: AppColors.white,
-                                    );
-                                  },
-                                ),
-                                onPressed: () => _controller!.toggleTorch(),
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.flip_camera_ios_rounded,
-                                  color: AppColors.white,
-                                ),
-                                onPressed: () => _controller!.switchCamera(),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+          ScannerTopBar(
+            onPickImage: _pickImage,
+            controllerState: _controller,
+            onToggleTorch: () => _controller!.toggleTorch(),
+            onSwitchCamera: () => _controller!.switchCamera(),
           ),
 
           // ─── Result Card ──────────────────────────────
           if (_hasScanned && _scannedData != null)
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                      child: Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: Glassmorphism.frosted(borderRadius: 24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.forest.withValues(
-                                      alpha: 0.1,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(
-                                    Icons.check_circle_rounded,
-                                    color: AppColors.forest,
-                                    size: 24,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Scanned!',
-                                        style: TextStyle(
-                                          fontFamily: 'Inter',
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w700,
-                                          color: AppColors.darkTeal,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Format: ${_scannedFormat ?? 'Unknown'}',
-                                        style: const TextStyle(
-                                          fontFamily: 'Inter',
-                                          fontSize: 12,
-                                          color: AppColors.mediumGray,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: AppColors.offWhite,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: SelectableText(
-                                _scannedData!,
-                                style: const TextStyle(
-                                  fontFamily: 'Inter',
-                                  fontSize: 14,
-                                  color: AppColors.charcoal,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    icon: const Icon(
-                                      Icons.copy_rounded,
-                                      size: 18,
-                                    ),
-                                    label: const Text('Copy'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.forest,
-                                      foregroundColor: AppColors.white,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                    onPressed: () {
-                                      // TODO: Copy to clipboard
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: OutlinedButton.icon(
-                                    icon: const Icon(
-                                      Icons.refresh_rounded,
-                                      size: 18,
-                                    ),
-                                    label: const Text('Scan Again'),
-                                    style: OutlinedButton.styleFrom(
-                                      backgroundColor: Colors.white.withValues(
-                                        alpha: 0.8,
-                                      ),
-                                      foregroundColor: AppColors.forest,
-                                      side: const BorderSide(
-                                        color: AppColors.sage,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                    onPressed: _resetScanner,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+            ScanResultCard(
+              scannedFormat: _scannedFormat ?? 'Unknown',
+              scannedData: _scannedData!,
+              onScanAgain: _resetScanner,
             ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildScanOverlay() {
-    return Center(
-      child: Container(
-        width: 260,
-        height: 260,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: _hasScanned
-                ? AppColors.success.withValues(alpha: 0.8)
-                : AppColors.amber.withValues(alpha: 0.6),
-            width: 3,
-          ),
-        ),
       ),
     );
   }
