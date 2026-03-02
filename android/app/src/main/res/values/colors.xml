@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Splash background: matches AppColors.darkTeal (#233D4D) -->
+    <color name="splash_bg">#FF233D4D</color>
+</resources>

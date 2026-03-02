@@ -1,0 +1,82 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android build artifacts
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# ─── Secrets & Credentials ────────────────────────────────────────────────────
+
+# Environment variables — NEVER commit real keys
+.env
+.env.local
+.env.production
+.env.staging
+
+# Firebase credentials
+google-services.json
+GoogleService-Info.plist
+
+# Android signing
+*.keystore
+*.jks
+key.properties
+/android/key.properties
+/android/app/key.properties
+
+# iOS signing & provisioning
+ios/Runner/GoogleService-Info.plist
+*.mobileprovision
+*.p12
+*.p8
+ios/Runner.xcworkspace/xcshareddata/
+ios/Runner.xcworkspace/xcuserdata/
+ios/Flutter/Generated.xcconfig
+ios/ServiceDefinitions.json
+
+# macOS
+macos/Runner/GoogleService-Info.plist
+macos/Runner/GoogleService.plist
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
