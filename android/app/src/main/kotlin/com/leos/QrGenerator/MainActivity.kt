@@ -1,4 +1,4 @@
-package com.leos.QrGenerator
+package com.leos.qrgenerator
 
 import io.flutter.embedding.android.FlutterActivity
 

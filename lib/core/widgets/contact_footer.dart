@@ -112,7 +112,7 @@ class ContactFooter extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'LeosPOS',
+            'Developer Info:',
             style: TextStyle(
               fontFamily: 'Inter',
               fontSize: 13,
