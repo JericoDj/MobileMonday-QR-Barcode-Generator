@@ -600,19 +600,50 @@ class _ItemPreviewDialogState extends State<_ItemPreviewDialog> {
                             cornerLength: 32,
                             strokeWidth: 5,
                             padding: 8,
-                            child: QrImageView(
-                              data: widget.item.data,
-                              version: QrVersions.auto,
-                              size: 200,
-                              backgroundColor: AppColors.white,
-                              eyeStyle: const QrEyeStyle(
-                                eyeShape: QrEyeShape.square,
-                                color: AppColors.darkTeal,
-                              ),
-                              dataModuleStyle: const QrDataModuleStyle(
-                                dataModuleShape: QrDataModuleShape.square,
-                                color: AppColors.charcoal,
-                              ),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                QrImageView(
+                                  data: widget.item.data,
+                                  version: QrVersions.auto,
+                                  errorCorrectionLevel: QrErrorCorrectLevel.H,
+                                  size: 200,
+                                  backgroundColor: AppColors.white,
+                                  eyeStyle: const QrEyeStyle(
+                                    eyeShape: QrEyeShape.square,
+                                    color: AppColors.darkTeal,
+                                  ),
+                                  dataModuleStyle: const QrDataModuleStyle(
+                                    dataModuleShape: QrDataModuleShape.square,
+                                    color: AppColors.charcoal,
+                                  ),
+                                ),
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.darkTeal.withValues(
+                                          alpha: 0.12,
+                                        ),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  padding: const EdgeInsets.all(4),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(6),
+                                    child: Image.asset(
+                                      'assets/leos-logo.png',
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           )
                         : QrCornerFrame(

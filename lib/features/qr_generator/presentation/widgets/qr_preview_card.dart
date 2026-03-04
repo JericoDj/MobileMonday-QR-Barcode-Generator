@@ -57,6 +57,7 @@ class QrPreviewCard extends StatelessWidget {
                           QrImageView(
                             data: generatedData,
                             version: QrVersions.auto,
+                            errorCorrectionLevel: QrErrorCorrectLevel.H,
                             size: 200,
                             backgroundColor: AppColors.white,
                             eyeStyle: const QrEyeStyle(
