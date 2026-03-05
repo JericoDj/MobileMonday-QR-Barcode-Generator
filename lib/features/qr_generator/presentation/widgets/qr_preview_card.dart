@@ -71,10 +71,10 @@ class QrPreviewCard extends StatelessWidget {
                           ),
                           // Center logo overlay
                           Container(
-                            width: 44,
-                            height: 44,
+                            width: MediaQuery.sizeOf(context).width * 0.1,
+                            height: MediaQuery.sizeOf(context).height * 0.05,
                             decoration: BoxDecoration(
-                              color: AppColors.white,
+                              color: Colors.transparent,
                               borderRadius: BorderRadius.circular(8),
                               boxShadow: [
                                 BoxShadow(

@@ -17,6 +17,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
@@ -440,14 +441,16 @@ class _ItemPreviewDialogState extends State<_ItemPreviewDialog> {
     setState(() => _isSaving = true);
     try {
       if (Platform.isAndroid) {
-        final photosStatus = await Permission.photos.request();
-        final storageStatus = await Permission.storage.request();
-
-        if (!photosStatus.isGranted && !storageStatus.isGranted) {
-          if (!mounted) return;
-          _showPermissionDeniedDialog();
-          setState(() => _isSaving = false);
-          return;
+        final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
+        final AndroidDeviceInfo info = await deviceInfoPlugin.androidInfo;
+        if ((info.version.sdkInt) < 29) {
+          final storageStatus = await Permission.storage.request();
+          if (!storageStatus.isGranted && !storageStatus.isLimited) {
+            if (!mounted) return;
+            _showPermissionDeniedDialog();
+            setState(() => _isSaving = false);
+            return;
+          }
         }
       }
 
@@ -619,10 +622,10 @@ class _ItemPreviewDialogState extends State<_ItemPreviewDialog> {
                                   ),
                                 ),
                                 Container(
-                                  width: 44,
-                                  height: 44,
+                                  width: MediaQuery.sizeOf(context).height * .05,
+                                  height: MediaQuery.sizeOf(context).height * .05,
                                   decoration: BoxDecoration(
-                                    color: AppColors.white,
+                                    color: Colors.transparent,
                                     borderRadius: BorderRadius.circular(8),
                                     boxShadow: [
                                       BoxShadow(

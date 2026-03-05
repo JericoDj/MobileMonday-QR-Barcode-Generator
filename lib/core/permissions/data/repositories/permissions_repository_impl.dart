@@ -20,9 +20,20 @@ class PermissionsRepositoryImpl implements PermissionsRepository {
     if (Platform.isAndroid) {
       AndroidDeviceInfo build = await DeviceInfoPlugin().androidInfo;
 
-      if (build.version.sdkInt >= 30) {
-        var re = await Permission.manageExternalStorage.status;
-        if (re.isGranted) {
+      if (build.version.sdkInt >= 33) {
+        var result = await Permission.photos.status;
+        if (result.isGranted || result.isLimited) {
+          storageDenied = false;
+          photosDenied = false;
+        } else {
+          storageDenied = true;
+          photosDenied = true;
+        }
+      } else if (build.version.sdkInt >= 29) {
+        // For API 29-32, saving images via MediaStore does not require permissions,
+        // but reading still requires READ_EXTERNAL_STORAGE represented by Permission.storage.
+        var result = await Permission.storage.status;
+        if (result.isGranted || result.isLimited) {
           storageDenied = false;
           photosDenied = false;
         } else {
@@ -68,18 +79,28 @@ class PermissionsRepositoryImpl implements PermissionsRepository {
     if (Platform.isAndroid) {
       AndroidDeviceInfo build = await DeviceInfoPlugin().androidInfo;
 
-      if (build.version.sdkInt >= 30) {
-        var re = await Permission.manageExternalStorage.request();
-        if (re.isGranted) {
+      if (build.version.sdkInt >= 33) {
+        var result = await Permission.photos.request();
+        if (result.isGranted || result.isLimited) {
           storageDenied = false;
-          photosDenied =
-              false; // Granted effectively for both concepts on API 30+ since we use MediaStore/manageExternalStorage
+          photosDenied = false;
+        } else {
+          storageDenied = true;
+          photosDenied = true;
+        }
+      } else if (build.version.sdkInt >= 29) {
+        var result = await Permission.storage.request();
+        // Since saving does not require it, we only fail if both reading and saving fail,
+        // but typically storage is requested here to cover reading.
+        if (result.isGranted || result.isLimited) {
+          storageDenied = false;
+          photosDenied = false;
         } else {
           storageDenied = true;
           photosDenied = true;
         }
       } else {
-        // SDK < 30 request legacy storage
+        // SDK < 29 request legacy storage
         var result = await Permission.storage.request();
         if (result.isGranted) {
           storageDenied = false;

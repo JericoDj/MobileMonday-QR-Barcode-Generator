@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/widgets/custom_snackbar.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
@@ -694,21 +695,19 @@ class _GeneratePageState extends State<GeneratePage>
       bool hasPermission = false;
 
       if (Platform.isAndroid) {
-        var photosStatus = await Permission.photos.request();
-        if (photosStatus.isGranted || photosStatus.isLimited) {
+        final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
+        final AndroidDeviceInfo info = await deviceInfoPlugin.androidInfo;
+        if ((info.version.sdkInt) >= 29) {
+          // On Android 10+ (API 29+), ImageGallerySaverPlus uses MediaStore,
+          // which does not require raw storage permissions to save images.
           hasPermission = true;
         } else {
           var storageStatus = await Permission.storage.request();
           if (storageStatus.isGranted || storageStatus.isLimited) {
             hasPermission = true;
-          } else if (photosStatus.isPermanentlyDenied &&
-              storageStatus.isPermanentlyDenied) {
+          } else if (storageStatus.isPermanentlyDenied) {
             _showPermissionDeniedDialog();
             return;
-          } else if (photosStatus.isDenied &&
-              storageStatus.isPermanentlyDenied) {
-            // Often on Android 13+, storage is permanently denied, but photos is just denied or not asked.
-            // We should let it pass if we can, but we need one of them.
           }
         }
       } else {
